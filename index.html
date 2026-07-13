@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineGraph — Rekomendasi Film Berbasis Teori Graf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,500;0,700;0,800;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+
+<!-- ============ BACKGROUND DECOR ============ -->
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-icon">🎞️</span>
+      <div>
+        <h1>Cine<em>Graph</em></h1>
+        <p><span class="mono">G(V, E)</span> — Rekomendasi Film Berbasis Teori Graf</p>
+      </div>
+    </div>
+    <button id="btnFullGraph" class="btn btn-ghost">
+      <span>⌗</span> Peta Graf Penuh
+    </button>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ============ HERO / PEMILIHAN NODE AWAL ============ -->
+  <section class="hero card">
+    <div class="hero-text">
+      <span class="eyebrow">Simpul Awal Penelusuran</span>
+      <h2>Pilih Film Favoritmu</h2>
+      <p>Film yang kamu pilih menjadi <b>vertex awal (V₀)</b> dalam graf. Sistem menelusuri graf secara
+      berlapis melalui <b>edge</b> genre, sutradara, dan aktor untuk menemukan film paling relevan.</p>
+    </div>
+
+    <form id="searchForm" class="search-box" autocomplete="off">
+      <div class="select-wrap">
+        <label for="movieSelect">Film favorit</label>
+        <select id="movieSelect" required>
+          <option value="" disabled selected>Memuat daftar film…</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <span>🔎</span> Cari Rekomendasi
+      </button>
+    </form>
+  </section>
+
+  <!-- ============ SOURCE MOVIE DETAIL ============ -->
+  <section id="sourceSection" class="hidden">
+    <h3 class="section-title">Film Terpilih <span class="chip">Node Awal</span></h3>
+    <div id="sourceCard" class="movie-detail card"></div>
+  </section>
+
+  <!-- ============ RECOMMENDATION RESULTS ============ -->
+  <section id="resultsSection" class="hidden">
+    <div class="section-head">
+      <h3 class="section-title">Rekomendasi Untukmu <span class="chip">Hasil Penelusuran Graf</span></h3>
+      <p class="section-sub">Diurutkan berdasarkan skor kedekatan graf (bobot edge × faktor jarak simpul)</p>
+    </div>
+    <div id="resultsGrid" class="grid"></div>
+  </section>
+
+  <!-- ============ EMPTY STATE ============ -->
+  <section id="emptyState" class="empty-state card">
+    <div class="empty-icon">🧭</div>
+    <h3>Belum ada film dipilih</h3>
+    <p>Pilih film favoritmu di atas untuk mulai menelusuri graf rekomendasi.</p>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Proyek Struktur Data — Pengembangan Sistem Rekomendasi Film Berbasis Teori Graf</p>
+  <p class="footer-sub">Graph · Adjacency List · BFS · Weighted Traversal</p>
+</footer>
+
+<!-- ============ MODAL: DETAIL FILM ============ -->
+<div id="modalDetail" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="modal-close" data-close>&times;</button>
+    <div id="modalDetailContent"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: VISUALISASI GRAF (EGO) ============ -->
+<div id="modalGraph" class="modal-overlay hidden">
+  <div class="modal modal-graph">
+    <button class="modal-close" data-close>&times;</button>
+    <div class="modal-graph-head">
+      <h3 id="graphModalTitle">Hubungan Film</h3>
+      <div class="legend">
+        <span class="legend-item"><i style="background:var(--signal-teal)"></i> Genre</span>
+        <span class="legend-item"><i style="background:var(--marquee-gold)"></i> Sutradara</span>
+        <span class="legend-item"><i style="background:var(--reel-crimson)"></i> Aktor</span>
+      </div>
+    </div>
+    <div class="film-frame">
+      <div id="egoNetwork" class="network-canvas"></div>
+    </div>
+    <p id="graphHint" class="graph-hint">Klik dua simpul berbeda untuk melihat jalur relasi terpendek di antara keduanya.</p>
+  </div>
+</div>
+
+<!-- ============ MODAL: SELURUH GRAF ============ -->
+<div id="modalFullGraph" class="modal-overlay hidden">
+  <div class="modal modal-graph modal-graph-full">
+    <button class="modal-close" data-close>&times;</button>
+    <div class="modal-graph-head">
+      <h3>Peta Seluruh Graf Film</h3>
+      <div class="legend">
+        <span class="legend-item"><i style="background:var(--signal-teal)"></i> Genre</span>
+        <span class="legend-item"><i style="background:var(--marquee-gold)"></i> Sutradara</span>
+        <span class="legend-item"><i style="background:var(--reel-crimson)"></i> Aktor</span>
+      </div>
+    </div>
+    <div class="film-frame">
+      <div id="fullNetwork" class="network-canvas network-canvas-lg"></div>
+    </div>
+    <div id="pathResultBox" class="path-result hidden"></div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
